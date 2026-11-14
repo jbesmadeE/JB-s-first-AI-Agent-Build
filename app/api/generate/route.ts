@@ -38,6 +38,7 @@ export async function POST(req: Request): Promise<Response> {
       model: lm,
       system: ENHANCER_AGENT_MD,
       prompt: idea,
+      maxOutputTokens: 250,
     });
     const expandedPrompt = enhancer.text.trim();
 
@@ -45,6 +46,7 @@ export async function POST(req: Request): Promise<Response> {
       model: lm,
       system: DIRECTOR_AGENT_MD,
       prompt: `${expandedPrompt}\nStyle: ${style}`,
+      maxOutputTokens: 250,
     });
     const finalPrompt = director.text.trim();
 

@@ -8,11 +8,40 @@ const provider = createOpenAICompatible({
 });
 
 export const FALLBACK_MODELS = [
-  'llama-3.3-70b-versatile',
-  'llama-3.1-8b-instant',
   'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
   'qwen/qwen3.8-27b',
 ] as const;
+
+const EXCLUDED_MODEL_SUBSTRINGS = ['whisper', 'orpheus', 'guard'];
+
+async function discoverModels(): Promise<string[]> {
+  const apiKey = process.env.AI_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const response = await fetch(`${process.env.AI_BASE_URL}/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+    if (!response.ok) return [];
+    const body = (await response.json()) as {
+      data?: Array<{ id?: string; active?: boolean }>;
+    };
+    return (body.data ?? [])
+      .filter((m) => m.id && (m.active ?? true))
+      .map((m) => m.id!)
+      .filter(
+        (id) =>
+          !EXCLUDED_MODEL_SUBSTRINGS.some((sub) =>
+            id.toLowerCase().includes(sub.toLowerCase()),
+          ),
+      );
+  } catch {
+    return [];
+  }
+}
 
 export const model = provider(process.env.AI_MODEL || FALLBACK_MODELS[0]);
 
@@ -31,7 +60,13 @@ export async function generateWithFallback({
   prompt: string;
 }): Promise<GenerateWithFallbackResult> {
   let lastError: unknown;
-  for (const modelId of FALLBACK_MODELS) {
+  const tried = new Set<string>();
+
+  const tryModel = async (
+    modelId: string,
+  ): Promise<GenerateWithFallbackResult | null> => {
+    if (tried.has(modelId)) return null;
+    tried.add(modelId);
     const modelInstance = provider(modelId) as unknown as GenerateTextModel;
     try {
       const result = await generateText({
@@ -47,7 +82,22 @@ export async function generateWithFallback({
         `[generateWithFallback] model "${modelId}" failed, trying next:`,
         err instanceof Error ? err.message : String(err),
       );
+      return null;
     }
+  };
+
+  for (const modelId of FALLBACK_MODELS) {
+    const result = await tryModel(modelId);
+    if (result) return result;
   }
+
+  const discovered = await discoverModels();
+  for (const modelId of discovered) {
+    if (FALLBACK_MODELS.includes(modelId as (typeof FALLBACK_MODELS)[number]))
+      continue;
+    const result = await tryModel(modelId);
+    if (result) return result;
+  }
+
   throw lastError ?? new Error('All fallback models failed');
 }

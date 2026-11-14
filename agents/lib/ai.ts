@@ -73,7 +73,7 @@ export async function generateWithFallback({
         model: modelInstance,
         system,
         prompt,
-        maxOutputTokens: 250,
+        maxTokens: 250,
       });
       return { text: result.text, modelUsed: modelId };
     } catch (err) {

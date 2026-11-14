@@ -1,10 +1,7 @@
-import { generateText } from "ai";
-import { model } from "@/agents/lib/ai";
+import { generateWithFallback } from "@/agents/lib/ai";
 import { ENHANCER_AGENT_MD, DIRECTOR_AGENT_MD } from "@/agents/prompts";
 import { buildImageUrl } from "@/agents/lib/imageGen";
 import { DIMENSIONS } from "@/lib/config";
-
-const lm = model as unknown as Parameters<typeof generateText>[0]["model"];
 
 export const runtime = "nodejs";
 
@@ -34,25 +31,26 @@ export async function POST(req: Request): Promise<Response> {
     const { idea, style, aspectRatio } = parsed;
     const { width, height } = DIMENSIONS[aspectRatio] ?? DIMENSIONS.Square;
 
-    const enhancer = await generateText({
-      model: lm,
+    const enhancer = await generateWithFallback({
       system: ENHANCER_AGENT_MD,
       prompt: idea,
-      maxOutputTokens: 250,
     });
     const expandedPrompt = enhancer.text.trim();
 
-    const director = await generateText({
-      model: lm,
+    const director = await generateWithFallback({
       system: DIRECTOR_AGENT_MD,
       prompt: `${expandedPrompt}\nStyle: ${style}`,
-      maxOutputTokens: 250,
     });
     const finalPrompt = director.text.trim();
 
     const imageUrl = buildImageUrl(finalPrompt, width, height);
 
-    return Response.json({ enhancedPrompt: finalPrompt, imageUrl });
+    return Response.json({
+      enhancedPrompt: finalPrompt,
+      imageUrl,
+      enhancerModelUsed: enhancer.modelUsed,
+      directorModelUsed: director.modelUsed,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed";
     console.error("Generate API error:", err);

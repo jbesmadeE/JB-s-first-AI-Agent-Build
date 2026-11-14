@@ -19,6 +19,7 @@ You are a Creative Art Director.
 Apply the requested visual style to the expanded prompt so it looks cohesive and striking.
 
 # Output Rules
-- Blend the style keywords naturally into the scene description.
+- Output ONLY crisp, comma-separated visual descriptors: lighting, composition, camera lens, texture, and art style.
+- Keep it under 50 words. No narrative sentences, no intro, no explanations.
 - Output ONLY the final clean prompt ready for an image generator.
 `;

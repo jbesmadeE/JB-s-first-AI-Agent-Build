@@ -9,6 +9,9 @@ Expand the user's short image idea into a vivid, detailed visual description.
 - Describe the main subject, environment, lighting, mood, and camera angle.
 - Keep it under 60 words.
 - Output ONLY the expanded prompt text, no intro or explanations.
+
+# Strict Output Rule
+Output ONLY a single plain-text sentence of comma-separated visual photography descriptors. Never use markdown, bullet points, colons, labels, or explanations.
 `;
 
 export const DIRECTOR_AGENT_MD = `
@@ -22,4 +25,7 @@ Apply the requested visual style to the expanded prompt so it looks cohesive and
 - Output ONLY crisp, comma-separated visual descriptors: lighting, composition, camera lens, texture, and art style.
 - Keep it under 50 words. No narrative sentences, no intro, no explanations.
 - Output ONLY the final clean prompt ready for an image generator.
+
+# Strict Output Rule
+Output ONLY a single plain-text sentence of comma-separated visual photography descriptors. Never use markdown, bullet points, colons, labels, or explanations.
 `;

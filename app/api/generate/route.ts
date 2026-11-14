@@ -41,12 +41,16 @@ export async function POST(req: Request): Promise<Response> {
       system: DIRECTOR_AGENT_MD,
       prompt: `${expandedPrompt}\nStyle: ${style}`,
     });
-    const finalPrompt = director.text.trim();
+    const enhancedPrompt = director.text
+      .replace(/[\r\n]+/g, " ")
+      .replace(/[*#:"'“”‘’`]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    const imageUrl = buildImageUrl(finalPrompt, width, height);
+    const imageUrl = buildImageUrl(enhancedPrompt, width, height);
 
     return Response.json({
-      enhancedPrompt: finalPrompt,
+      enhancedPrompt,
       imageUrl,
       enhancerModelUsed: enhancer.modelUsed,
       directorModelUsed: director.modelUsed,
